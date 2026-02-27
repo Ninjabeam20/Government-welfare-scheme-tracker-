@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
+import VerificationQueue from './VerificationQueue';
 
 const OfficerDashboard = () => {
+  // State to manage which view is active in the main content area
+  const [activeView, setActiveView] = useState('overview');
+
   return (
     <div className="dashboard-container">
-      {/* FLUENT UI STYLES - Consistent with Admin Dashboard */}
+      {/* FLUENT UI STYLES */}
       <style>{`
-        .dashboard-container { 
-          display: flex; height: 100vh; width: 100vw; background-color: #f1f5f9; 
-        }
+        .dashboard-container { display: flex; height: 100vh; width: 100vw; background-color: #f1f5f9; }
         
         .sidebar { 
           width: 280px; background: #ffffff; margin: 20px; border-radius: 24px; 
@@ -21,7 +23,7 @@ const OfficerDashboard = () => {
         }
         .nav-link:hover { background: #f8fafc; color: #0f172a; transform: translateX(6px); }
         .nav-link.active { 
-          background: #10b981; color: #ffffff; /* Green theme for Officer */
+          background: #10b981; color: #ffffff; 
           box-shadow: 0 8px 20px rgba(16, 185, 129, 0.25); 
         }
 
@@ -51,10 +53,7 @@ const OfficerDashboard = () => {
           font-weight: 600; cursor: pointer; transition: all 0.3s ease; 
         }
         .btn-action:hover { background: #059669; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); }
-        
-        .btn-secondary {
-          background: #f1f5f9; color: #0f172a;
-        }
+        .btn-secondary { background: #f1f5f9; color: #0f172a; }
         .btn-secondary:hover { background: #e2e8f0; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
       `}</style>
 
@@ -62,9 +61,19 @@ const OfficerDashboard = () => {
       <aside className="sidebar">
         <div className="logo">OfficerPortal.</div>
         <nav>
-          <div className="nav-link active"><span>📋</span> Verification Queue</div>
+          <div 
+            className={`nav-link ${activeView === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveView('overview')}
+          >
+            <span>📊</span> Dashboard Overview
+          </div>
+          <div 
+            className={`nav-link ${activeView === 'queue' ? 'active' : ''}`}
+            onClick={() => setActiveView('queue')}
+          >
+            <span>📋</span> Verification Queue
+          </div>
           <div className="nav-link"><span>✅</span> Approved Apps</div>
-          <div className="nav-link"><span>❌</span> Rejected Apps</div>
           <div className="nav-link"><span>🔀</span> Routing History</div>
         </nav>
       </aside>
@@ -72,35 +81,39 @@ const OfficerDashboard = () => {
       {/* Main Dashboard Content */}
       <main className="main">
         <header className="header">
-          <h2>Verification Operations</h2>
+          <h2>
+            {activeView === 'overview' ? 'Verification Operations' : 'Verification Queue'}
+          </h2>
           <div className="profile-badge">👮‍♂️ Welfare Officer</div>
         </header>
 
-        <section className="grid">
-          {/* Card 1: Document Verification */}
-          <div className="card">
-            <h3>Pending Verifications</h3>
-            <div className="value">42</div>
-            <p>Aadhaar & eKYC documents awaiting review</p>
-            <button className="btn-action">Review Documents</button>
-          </div>
+        {/* Dynamic Rendering based on active sidebar tab */}
+        {activeView === 'overview' && (
+          <section className="grid">
+            <div className="card">
+              <h3>Pending Verifications</h3>
+              <div className="value">42</div>
+              <p>Aadhaar & eKYC documents awaiting review</p>
+              <button className="btn-action" onClick={() => setActiveView('queue')}>Review Documents</button>
+            </div>
+            <div className="card">
+              <h3>Auto-Routed Today</h3>
+              <div className="value">18</div>
+              <p>Sent to Finance/DBT Department</p>
+              <button className="btn-action btn-secondary">View Routing Log</button>
+            </div>
+            <div className="card">
+              <h3>Suspicious Flags</h3>
+              <div className="value">3</div>
+              <p>Potential duplicate/ghost beneficiaries</p>
+              <button className="btn-action" style={{ background: '#ef4444', boxShadow: 'none' }}>Investigate</button>
+            </div>
+          </section>
+        )}
 
-          {/* Card 2: Routing/Workflows */}
-          <div className="card">
-            <h3>Auto-Routed Today</h3>
-            <div className="value">18</div>
-            <p>Sent to Finance/DBT Department</p>
-            <button className="btn-action btn-secondary">View Routing Log</button>
-          </div>
-
-          {/* Card 3: Fraud/AI Detection (From Lab 3A Future Enhancements) */}
-          <div className="card">
-            <h3>Suspicious Flags</h3>
-            <div className="value">3</div>
-            <p>Potential duplicate/ghost beneficiaries</p>
-            <button className="btn-action" style={{ background: '#ef4444', boxShadow: 'none' }}>Investigate</button>
-          </div>
-        </section>
+        {activeView === 'queue' && (
+          <VerificationQueue />
+        )}
       </main>
     </div>
   );
