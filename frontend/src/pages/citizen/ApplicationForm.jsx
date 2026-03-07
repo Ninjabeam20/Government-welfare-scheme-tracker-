@@ -57,7 +57,7 @@ const ApplicationForm = () => {
       <aside className="sidebar">
         <div className="logo">WelfarePortal.</div>
         <nav>
-          <div className="nav-link" onClick={() => navigate('/')}><span>🏠</span> Dashboard</div>
+w          <div className="nav-link" onClick={() => navigate('/')}><span>🏠</span> Dashboard</div>
           <div className="nav-link active" onClick={() => navigate('/citizen/schemes')}><span>📄</span> Apply for Schemes</div>
           <div className="nav-link" onClick={() => navigate('/citizen/track')}><span>📊</span> Track Status</div>
           <div className="nav-link" onClick={() => navigate('/citizen/documents')}><span>📁</span> My Documents</div>

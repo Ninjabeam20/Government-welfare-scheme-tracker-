@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   return (
     <div className="admin-container">
       {/* FLUENT UI STYLES */}
@@ -61,9 +63,10 @@ const AdminDashboard = () => {
       <aside className="sidebar">
         <div className="logo">AdminPortal.</div>
         <nav>
-          <div className="nav-link active"><span>✨</span> Dashboard Overview</div>
-          <div className="nav-link"><span>🗂️</span> Manage Schemes</div>
-          <div className="nav-link"><span>🛡️</span> System Audit Logs</div>
+          <div className="nav-link active" onClick={() => navigate('/admin')}><span>✨</span> Dashboard Overview</div>
+          <div className="nav-link" onClick={() => navigate('/admin/schemes')}><span>🗂️</span> Manage Schemes</div>
+          <div className="nav-link" onClick={() => navigate('/admin/officers')}><span>👮‍♂️</span> Manage Officers</div>
+          <div className="nav-link" onClick={() => navigate('/admin/audits')}><span>🛡️</span> System Audit Logs</div>
           <div className="nav-link"><span>📊</span> Fiscal Predictability</div>
         </nav>
       </aside>
@@ -81,15 +84,22 @@ const AdminDashboard = () => {
             <h3>Total Welfare Schemes</h3>
             <div className="value">14</div>
             <p>+2 added this quarter</p>
-            <button className="btn-primary">Create New Scheme</button>
+            
+            {/* THIS BUTTON NOW NAVIGATES AND PASSES A FLAG TO OPEN THE MODAL */}
+            <button 
+              className="btn-primary" 
+              onClick={() => navigate('/admin/schemes', { state: { openModal: true } })}
+            >
+              Create New Scheme
+            </button>
+            
           </div>
-
           {/* Card 2 based on Audits Use Case */}
           <div className="card">
             <h3>System Compliance</h3>
             <div className="value">100%</div>
             <p>No anomalies detected in DB</p>
-            <button className="btn-primary">View Audit Logs</button>
+            <button className="btn-primary" onClick={() => navigate('/admin/audits')}>View Audit Logs</button>
           </div>
 
           {/* Card 3 based on Centralized Workflow Use Case */}
