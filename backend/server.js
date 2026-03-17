@@ -11,15 +11,18 @@ app.use(express.json());
 
 // MySQL Database Connection Pool (Using Teammate's DB Name)
 const pool = mysql.createPool({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',        
-    password: process.env.DB_PASSWORD || '',    
-    database: process.env.DB_NAME || 'welfare_core_system', // Sync with teammate
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || 'root@1234',
+  database: process.env.DB_NAME || 'welfare_system',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
+pool.getConnection()
+  .then(() => console.log('Database connected'))
+  .catch(err => console.log('DB Error:', err.message));
 // ==========================================
 // IMPORT ROUTES
 // ==========================================

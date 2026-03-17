@@ -4,51 +4,79 @@ const router = express.Router();
 // We export a function that accepts the MySQL 'pool' from server.js
 module.exports = (pool) => {
 
-    // 1. GET API: Fetch all applications awaiting verification
-    // Route: GET /api/officer/applications/pending
-    router.get('/applications/pending', async (req, res) => {
+    // GET API: Fetch all applications awaiting verification
+    // Route: GET /api/officer/queue/:officerId
+    router.get('/queue/:officerId', async (req, res) => {
         try {
-            // We join 3 tables to match the exact data structure your React frontend expects!
             const query = `
                 SELECT 
-                    a.id, 
-                    c.full_name AS name, 
-                    s.scheme_name AS scheme, 
-                    DATE_FORMAT(a.applied_on, '%d %b %Y') AS date, 
-                    a.status, 
-                    c.income 
+                    a.RecordID, 
+                    c.Name, 
+                    c.Email,
+                    c.Aadhaar,
+                    c.Income,
+                    s.SchemeName, 
+                    a.Applied_on, 
+                    a.Status
                 FROM currentapplications a
-                JOIN individualbeneficiaries c ON a.citizen_id = c.id
-                JOIN welfareschemes s ON a.scheme_id = s.id
-                WHERE a.status NOT IN ('Approved', 'Rejected', 'Routed to DBT')
-                ORDER BY a.applied_on DESC;
+                JOIN individualbeneficiaries c ON a.BeneficiaryID = c.BeneficiaryID
+                JOIN welfareschemes s ON a.SchemeID = s.SchemeID
+                WHERE a.Status = 'Pending';
             `;
             
             const [rows] = await pool.query(query);
             res.json(rows); // Send the rows back to the React frontend
         } catch (error) {
-            console.error("Error fetching applications:", error);
+            console.error("Error fetching applications:", error.message);
             res.status(500).json({ message: "Failed to fetch pending applications." });
         }
     });
 
-    // 2. PATCH API: Update application status (Approve / Reject)
-    // Route: PATCH /api/officer/applications/:id/status
-    router.patch('/applications/:id/status', async (req, res) => {
+    // PUT API: Approve application
+    // Route: PUT /api/officer/applications/:id/approve
+    router.put('/applications/:id/approve', async (req, res) => {
         const applicationId = req.params.id;
-        const { status } = req.body; // e.g., "Approved" or "Rejected"
 
         try {
-            const query = `UPDATE applications SET status = ? WHERE id = ?`;
-            await pool.query(query, [status, applicationId]);
+            // Update the application status
+            const updateQuery = `UPDATE currentapplications SET Status = 'Approved' WHERE RecordID = ?`;
+            await pool.query(updateQuery, [applicationId]);
             
+            // Log the action to auditlogs
+            const logQuery = `INSERT INTO auditlogs (ActorType, ActionDetails) VALUES ('Officer', ?)`;
+            await pool.query(logQuery, [`Approved application #${applicationId}`]);
+
             res.json({ 
                 success: true, 
-                message: `Application ${applicationId} successfully marked as ${status}.` 
+                message: `Application ${applicationId} successfully marked as Approved.` 
             });
         } catch (error) {
-            console.error("Error updating status:", error);
-            res.status(500).json({ message: "Failed to update application status." });
+            console.error("Error approving application:", error.message);
+            res.status(500).json({ message: "Failed to approve application." });
+        }
+    });
+
+    // PUT API: Reject application
+    // Route: PUT /api/officer/applications/:id/reject
+    router.put('/applications/:id/reject', async (req, res) => {
+        const applicationId = req.params.id;
+
+        try {
+            // Update the application status
+            const updateQuery = `UPDATE currentapplications SET Status = 'Rejected' WHERE RecordID = ?`;
+            await pool.query(updateQuery, [applicationId]);
+            
+            // Log the action to auditlogs
+            const logQuery = `INSERT INTO auditlogs (ActorType, ActionDetails) VALUES ('Officer', ?)`;
+            await pool.query(logQuery, [`Rejected application #${applicationId}`]);
+
+            res.json({ 
+                success: true, 
+                message: `Application ${applicationId} successfully marked as Rejected.` 
+            });
+        } catch (error) {
+            console.error("Error rejecting application:", error.message);
+            res.status(500).json({ message: "Failed to reject application." });
         }
     });
 

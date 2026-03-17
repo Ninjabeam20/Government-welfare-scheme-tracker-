@@ -8,6 +8,7 @@ import ApplicationForm from './pages/citizen/ApplicationForm';
 import TrackStatus from './pages/citizen/TrackStatus';
 import TrackDetails from './pages/citizen/TrackDetails'; // Added this
 import MyDocuments from './pages/citizen/MyDocuments';   // Added this
+import Grievance from './pages/citizen/Grievance';       // Added this
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';

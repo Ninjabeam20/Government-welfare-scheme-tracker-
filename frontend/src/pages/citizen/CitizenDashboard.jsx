@@ -1,19 +1,14 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom'; // 1. WE ADDED THIS
+import { useNavigate } from 'react-router-dom';
+import CitizenSidebar from './CitizenSidebar';
 
 const CitizenDashboard = () => {
-  const navigate = useNavigate(); // 2. WE ADDED THIS
+  const navigate = useNavigate();
 
   return (
     <div className="dashboard-container">
-      {/* FLUENT UI STYLES - Blue Theme for Citizens */}
       <style>{`
         .dashboard-container { display: flex; height: 100vh; width: 100vw; background-color: #f1f5f9; }
-        .sidebar { width: 280px; background: #ffffff; margin: 20px; border-radius: 24px; padding: 30px 20px; display: flex; flex-direction: column; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.06); }
-        .logo { font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 40px; padding-left: 10px; letter-spacing: -0.5px; }
-        .nav-link { padding: 14px 20px; color: #64748b; font-weight: 600; border-radius: 16px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; gap: 12px; }
-        .nav-link:hover { background: #f8fafc; color: #0f172a; transform: translateX(6px); }
-        .nav-link.active { background: #2563eb; color: #ffffff; box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25); }
         .main { flex: 1; padding: 20px 40px 40px 20px; display: flex; flex-direction: column; overflow-y: auto; }
         .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0 40px 0; }
         .header h2 { font-size: 30px; color: #0f172a; font-weight: 800; letter-spacing: -1px; }
@@ -31,16 +26,7 @@ const CitizenDashboard = () => {
         .btn-secondary:hover { background: #e2e8f0; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
       `}</style>
 
-      {/* Sidebar Navigation - 3. WIRED UP ONCLICK EVENTS HERE */}
-      <aside className="sidebar">
-        <div className="logo">WelfarePortal.</div>
-        <nav>
-          <div className="nav-link active" onClick={() => navigate('/')}><span>🏠</span> Dashboard</div>
-          <div className="nav-link" onClick={() => navigate('/citizen/schemes')}><span>📄</span> Apply for Schemes</div>
-          <div className="nav-link" onClick={() => navigate('/citizen/track')}><span>📊</span> Track Status</div>
-          <div className="nav-link" onClick={() => navigate('/citizen/documents')}><span>📁</span> My Documents</div>
-<div className="nav-link" onClick={() => navigate('/citizen/grievance')}><span>🎧</span> Grievance Support</div>        </nav>
-      </aside>
+      <CitizenSidebar />
 
       <main className="main">
         <header className="header">
@@ -53,7 +39,6 @@ const CitizenDashboard = () => {
             <h3>Available Schemes</h3>
             <div className="value">12</div>
             <p>Schemes matching your eligibility</p>
-            {/* 4. WIRED UP THIS BUTTON */}
             <button className="btn-action" onClick={() => navigate('/citizen/schemes')}>Browse Schemes</button>
           </div>
 
@@ -61,7 +46,6 @@ const CitizenDashboard = () => {
             <h3>Active Applications</h3>
             <div className="value">Under Review</div>
             <p>Education Scholarship 2026</p>
-            {/* 5. WIRED UP THIS BUTTON */}
             <button className="btn-action btn-secondary" onClick={() => navigate('/citizen/track')}>Track Live Status</button>
           </div>
 
@@ -69,7 +53,7 @@ const CitizenDashboard = () => {
             <h3>eKYC Verification</h3>
             <div className="value" style={{ color: '#ef4444' }}>Pending</div>
             <p>Upload Aadhaar to receive DBT funds</p>
-            <button className="btn-action">Upload Documents</button>
+            <button className="btn-action" onClick={() => navigate('/citizen/documents')}>Upload Documents</button>
           </div>
         </section>
       </main>

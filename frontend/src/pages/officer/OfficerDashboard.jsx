@@ -1,32 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import VerificationQueue from './VerificationQueue';
+import OfficerSidebar from './OfficerSidebar';
 
 const OfficerDashboard = () => {
   // State to manage which view is active in the main content area
-  const [activeView, setActiveView] = useState('overview');
+  const [activeView, setActiveView] = useState('dashboard');
+  const [pendingCount, setPendingCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    // Fetch dashboard stats (pending verifications)
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        // Assuming officer ID is 1 for now
+        const res = await axios.get('http://localhost:5000/api/officer/queue/1');
+        setPendingCount(res.data.length);
+        setLoading(false);
+      } catch (err) {
+        setError("Failed to load dashboard statistics.");
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
 
   return (
     <div className="dashboard-container">
-      {/* FLUENT UI STYLES */}
       <style>{`
         .dashboard-container { display: flex; height: 100vh; width: 100vw; background-color: #f1f5f9; }
-        
-        .sidebar { 
-          width: 280px; background: #ffffff; margin: 20px; border-radius: 24px; 
-          padding: 30px 20px; display: flex; flex-direction: column; 
-          box-shadow: 0 10px 40px -10px rgba(0,0,0,0.06); 
-        }
-        .logo { font-size: 24px; font-weight: 800; color: #0f172a; margin-bottom: 40px; padding-left: 10px; letter-spacing: -0.5px; }
-        .nav-link { 
-          padding: 14px 20px; color: #64748b; font-weight: 600; border-radius: 16px; 
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; gap: 12px;
-        }
-        .nav-link:hover { background: #f8fafc; color: #0f172a; transform: translateX(6px); }
-        .nav-link.active { 
-          background: #10b981; color: #ffffff; 
-          box-shadow: 0 8px 20px rgba(16, 185, 129, 0.25); 
-        }
-
         .main { flex: 1; padding: 20px 40px 40px 20px; display: flex; flex-direction: column; overflow-y: auto; }
         .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0 40px 0; }
         .header h2 { font-size: 30px; color: #0f172a; font-weight: 800; letter-spacing: -1px; }
@@ -55,58 +59,48 @@ const OfficerDashboard = () => {
         .btn-action:hover { background: #059669; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); }
         .btn-secondary { background: #f1f5f9; color: #0f172a; }
         .btn-secondary:hover { background: #e2e8f0; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        .loading-text { font-size: 16px; color: #64748b; font-weight: 500; }
+        .error-text { font-size: 16px; color: #ef4444; font-weight: 500; }
       `}</style>
 
       {/* Sidebar Navigation */}
-      <aside className="sidebar">
-        <div className="logo">OfficerPortal.</div>
-        <nav>
-          <div 
-            className={`nav-link ${activeView === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveView('overview')}
-          >
-            <span>📊</span> Dashboard Overview
-          </div>
-          <div 
-            className={`nav-link ${activeView === 'queue' ? 'active' : ''}`}
-            onClick={() => setActiveView('queue')}
-          >
-            <span>📋</span> Verification Queue
-          </div>
-          <div className="nav-link"><span>✅</span> Approved Apps</div>
-          <div className="nav-link"><span>🔀</span> Routing History</div>
-        </nav>
-      </aside>
+      <OfficerSidebar activeView={activeView} setActiveView={setActiveView} />
 
       {/* Main Dashboard Content */}
       <main className="main">
         <header className="header">
           <h2>
-            {activeView === 'overview' ? 'Verification Operations' : 'Verification Queue'}
+            {activeView === 'dashboard' ? 'Verification Operations' : 'Verification Queue'}
           </h2>
           <div className="profile-badge">👮‍♂️ Welfare Officer</div>
         </header>
 
-        {/* Dynamic Rendering based on active sidebar tab */}
-        {activeView === 'overview' && (
+        {activeView === 'dashboard' && (
           <section className="grid">
             <div className="card">
-              <h3>Pending Verifications</h3>
-              <div className="value">42</div>
-              <p>Aadhaar & eKYC documents awaiting review</p>
+              <h3>Total Assigned Queue</h3>
+              {loading ? (
+                <div className="loading-text">Loading stats...</div>
+              ) : error ? (
+                <div className="error-text">{error}</div>
+              ) : (
+                <div className="value">{pendingCount}</div>
+              )}
+              <p>Applications awaiting review</p>
               <button className="btn-action" onClick={() => setActiveView('queue')}>Review Documents</button>
             </div>
+            {/* The rest of the dashboard was mock data, but we can keep these structure for UI */}
             <div className="card">
               <h3>Auto-Routed Today</h3>
-              <div className="value">18</div>
+              <div className="value">-</div>
               <p>Sent to Finance/DBT Department</p>
-              <button className="btn-action btn-secondary">View Routing Log</button>
+              <button className="btn-action btn-secondary" disabled>View Routing Log</button>
             </div>
             <div className="card">
               <h3>Suspicious Flags</h3>
-              <div className="value">3</div>
+              <div className="value">-</div>
               <p>Potential duplicate/ghost beneficiaries</p>
-              <button className="btn-action" style={{ background: '#ef4444', boxShadow: 'none' }}>Investigate</button>
+              <button className="btn-action" style={{ background: '#ef4444', boxShadow: 'none' }} disabled>Investigate</button>
             </div>
           </section>
         )}
