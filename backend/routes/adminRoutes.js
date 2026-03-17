@@ -120,5 +120,22 @@ module.exports = (pool) => {
         }
     });
 
+    router.post('/officers', async (req, res) => {
+  const { Name, Email, Department } = req.body;
+  try {
+    await pool.query(
+      `INSERT INTO officers (Name, Email, Department, Status) VALUES (?, ?, ?, 'Active')`,
+      [Name, Email, Department]
+    );
+    await pool.query(
+      `INSERT INTO auditlogs (ActorType, ActionDetails, ActionTime) VALUES ('Admin', ?, NOW())`,
+      [`Added officer: ${Name}`]
+    );
+    res.status(201).json({ success: true, message: 'Officer added' });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: 'Error adding officer' });
+  }
+});
     return router;
 };

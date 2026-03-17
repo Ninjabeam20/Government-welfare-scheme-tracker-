@@ -5,6 +5,10 @@ import AdminSidebar from './AdminSidebar';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const handleLogout = async () => {
+  await axios.get('http://localhost:5000/auth/logout', { withCredentials: true });
+  navigate('/login');
+};
   const [stats, setStats] = useState({ totalSchemes: 0, activeSchemes: 0, totalOfficers: 0, activeOfficers: 0 });
   const [recentLogs, setRecentLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +76,14 @@ const AdminDashboard = () => {
       <main className="main">
         <header className="header">
           <h2>System Operations</h2>
-          <div className="profile-badge">Administrator</div>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+  <div className="profile-badge">Administrator</div>
+  <button onClick={handleLogout} style={{
+    background: '#fee2e2', color: '#dc2626', border: 'none',
+    padding: '12px 24px', borderRadius: '99px',
+    fontWeight: '700', cursor: 'pointer', fontSize: '14px'
+  }}>Sign Out</button>
+</div>
         </header>
 
         {loading ? (

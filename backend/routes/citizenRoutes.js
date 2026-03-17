@@ -1,5 +1,20 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+const uploadDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, unique + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 module.exports = (pool) => {
     // Fetch all active schemes for the Citizen "Browse Schemes" page
@@ -81,6 +96,55 @@ await pool.query(query, [citizen_id, scheme_id]);
     res.status(500).json({ message: "Error submitting grievance" });
   }
 });
+router.get('/profile/:beneficiaryId', async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      'SELECT BeneficiaryID, Name, Email, Income, Category FROM individualbeneficiaries WHERE BeneficiaryID=?',
+      [req.params.beneficiaryId]
+    );
+    if (rows.length === 0) return res.status(404).json({ message: 'Not found' });
+    res.json(rows[0]);
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: 'Error fetching profile' });
+  }
+});
+// Upload document
+router.post('/documents/upload', upload.single('file'), async (req, res) => {
+  try {
+    const { beneficiaryId, docType } = req.body;
+    const fileName = req.file.originalname;
+    const filePath = req.file.filename;
+    await pool.query(
+      `INSERT INTO documents (BeneficiaryID, DocType, FileName, FilePath, Status, UploadedOn) 
+       VALUES (?, ?, ?, ?, 'Pending', NOW())`,
+      [beneficiaryId, docType, fileName, filePath]
+    );
+    res.json({ success: true, message: 'Document uploaded' });
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: 'Upload failed' });
+  }
+});
 
+// Serve file for preview
+router.get('/documents/file/:filename', (req, res) => {
+  const filePath = path.join(__dirname, '../uploads', req.params.filename);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ message: 'File not found' });
+  res.sendFile(filePath);
+});
+// Get documents for a citizen
+router.get('/documents/:beneficiaryId', async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT * FROM documents WHERE BeneficiaryID = ? ORDER BY UploadedOn DESC`,
+      [req.params.beneficiaryId]
+    );
+    res.json(rows);
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).json({ message: 'Error fetching documents' });
+  }
+});
     return router;
 };

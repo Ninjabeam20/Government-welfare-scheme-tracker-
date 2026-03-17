@@ -1,37 +1,54 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import CitizenSidebar from './CitizenSidebar';
 
 const MyDocuments = () => {
-  const navigate = useNavigate();
-
-  const [documents, setDocuments] = useState([
-    { id: 1, type: 'Aadhaar Card', name: 'Aadhaar_Front_Back.pdf', status: 'Approved', date: '2026-02-15' },
-    { id: 2, type: 'Income Certificate', name: 'Income_Proof_2026.pdf', status: 'Pending', date: '2026-02-26' },
-    { id: 3, type: 'Bank Passbook', name: 'SBI_Passbook.jpg', status: 'Rejected', date: '2026-02-10' }
-  ].sort((a, b) => new Date(b.date) - new Date(a.date)));
-
+  const [documents, setDocuments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [viewDoc, setViewDoc] = useState(null);
+  const [previewDoc, setPreviewDoc] = useState(null);
   const [uploadForm, setUploadForm] = useState({ type: '', file: null });
+  const [uploading, setUploading] = useState(false);
+  const [beneficiaryId, setBeneficiaryId] = useState(null);
 
-  const handleUploadSubmit = (e) => {
-    e.preventDefault();
-    if (!uploadForm.file || !uploadForm.type) return alert("Please fill all fields");
-
-    const newDoc = {
-      id: Date.now(),
-      type: uploadForm.type,
-      name: uploadForm.file.name,
-      status: 'Pending',
-      date: new Date().toISOString().split('T')[0]
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const meRes = await axios.get('http://localhost:5000/auth/me', { withCredentials: true });
+        const uid = meRes.data.userId;
+        setBeneficiaryId(uid);
+        const docsRes = await axios.get(`http://localhost:5000/api/citizen/documents/${uid}`);
+        setDocuments(docsRes.data);
+      } catch (err) {
+        console.log(err.message);
+      } finally {
+        setLoading(false);
+      }
     };
+    init();
+  }, []);
 
-    const updatedDocs = [newDoc, ...documents].sort((a, b) => new Date(b.date) - new Date(a.date));
-    setDocuments(updatedDocs);
-    
-    setUploadForm({ type: '', file: null });
-    setIsUploadOpen(false);
+  const handleUpload = async (e) => {
+    e.preventDefault();
+    if (!uploadForm.file || !uploadForm.type) return alert('Please fill all fields');
+    const formData = new FormData();
+    formData.append('file', uploadForm.file);
+    formData.append('beneficiaryId', beneficiaryId);
+    formData.append('docType', uploadForm.type);
+    try {
+      setUploading(true);
+      await axios.post('http://localhost:5000/api/citizen/documents/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const docsRes = await axios.get(`http://localhost:5000/api/citizen/documents/${beneficiaryId}`);
+      setDocuments(docsRes.data);
+      setUploadForm({ type: '', file: null });
+      setIsUploadOpen(false);
+    } catch (err) {
+      alert('Upload failed: ' + err.message);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const getStatusColor = (status) => {
@@ -41,6 +58,17 @@ const MyDocuments = () => {
     return '#64748b';
   };
 
+  const getPreviewUrl = (filePath) => `http://localhost:5000/uploads/${filePath}`;
+  const isImage = (fileName) => /\.(jpg|jpeg|png|gif|webp)$/i.test(fileName);
+  const isPDF = (fileName) => /\.pdf$/i.test(fileName);
+
+  const handleDownload = (filePath, fileName) => {
+    const link = document.createElement('a');
+    link.href = getPreviewUrl(filePath);
+    link.download = fileName;
+    link.click();
+  };
+
   return (
     <div className="dashboard-container">
       <style>{`
@@ -48,31 +76,29 @@ const MyDocuments = () => {
         .main { flex: 1; padding: 20px 40px 40px 20px; display: flex; flex-direction: column; overflow-y: auto; }
         .header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0 30px 0; }
         .header h2 { font-size: 30px; color: #0f172a; font-weight: 800; letter-spacing: -1px; }
-        .btn-primary { padding: 12px 24px; background: #2563eb; color: white; border: none; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
-        .btn-primary:hover { background: #1d4ed8; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3); }
+        .btn-primary { padding: 12px 24px; background: #2563eb; color: white; border: none; border-radius: 14px; font-size: 15px; font-weight: 600; cursor: pointer; }
         .doc-list { background: #ffffff; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); overflow: hidden; }
         .doc-item { display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; border-bottom: 1px solid #f1f5f9; transition: background 0.2s; }
         .doc-item:hover { background: #f8fafc; }
         .doc-item:last-child { border-bottom: none; }
         .doc-info { display: flex; align-items: center; gap: 16px; }
-        .doc-icon { width: 48px; height: 48px; background: #eff6ff; color: #2563eb; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .doc-icon { width: 48px; height: 48px; background: #eff6ff; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
         .doc-type { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
-        .doc-name { font-size: 14px; color: #64748b; font-weight: 500; cursor: pointer; transition: color 0.2s; }
-        .doc-name:hover { color: #2563eb; text-decoration: underline; }
+        .doc-name { font-size: 14px; color: #2563eb; font-weight: 500; cursor: pointer; }
+        .doc-name:hover { text-decoration: underline; }
         .doc-date { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+        .doc-right { display: flex; align-items: center; gap: 12px; }
         .status-badge { padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; animation: fadeIn 0.2s ease-out; }
-        .modal-content { background: white; padding: 32px; border-radius: 24px; width: 100%; max-width: 500px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .btn-preview { padding: 8px 16px; background: #f1f5f9; border: none; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600; color: #334155; }
+        .btn-preview:hover { background: #e2e8f0; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 32px; border-radius: 24px; width: 100%; max-width: 520px; box-shadow: 0 25px 50px rgba(0,0,0,0.25); }
+        .preview-modal { max-width: 800px; max-height: 90vh; overflow-y: auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
-        .close-btn { background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; color: #64748b; transition: all 0.2s; }
-        .close-btn:hover { background: #e2e8f0; color: #0f172a; }
-        .form-control { width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; font-size: 15px; margin-bottom: 20px; outline: none; transition: all 0.2s; }
-        .form-control:focus { border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); background: white; }
-        .file-box { border: 2px dashed #cbd5e1; padding: 40px 20px; border-radius: 16px; text-align: center; background: #f8fafc; cursor: pointer; transition: all 0.2s; margin-bottom: 24px; position: relative; }
-        .file-box:hover { border-color: #2563eb; background: #eff6ff; }
-        .file-box input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .close-btn { background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; }
+        .form-control { width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; font-size: 15px; margin-bottom: 20px; outline: none; box-sizing: border-box; }
+        .file-box { border: 2px dashed #cbd5e1; padding: 40px 20px; border-radius: 16px; text-align: center; background: #f8fafc; cursor: pointer; margin-bottom: 24px; position: relative; }
+        .file-box input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
       `}</style>
 
       <CitizenSidebar />
@@ -81,35 +107,68 @@ const MyDocuments = () => {
         <header className="header">
           <div>
             <h2>My Documents & eKYC</h2>
-            <p style={{ color: '#64748b', fontWeight: '500', marginTop: '5px' }}>Manage your identity and income proofs.</p>
+            <p style={{ color: '#64748b', fontWeight: '500', marginTop: '5px' }}>
+              Manage your identity and income proofs.
+            </p>
           </div>
           <button className="btn-primary" onClick={() => setIsUploadOpen(true)}>
             + Upload Document
           </button>
         </header>
 
-        <section className="doc-list">
-          {documents.map(doc => (
-            <div className="doc-item" key={doc.id}>
-              <div className="doc-info">
-                <div className="doc-icon">📄</div>
-                <div>
-                  <div className="doc-type">{doc.type}</div>
-                  <div className="doc-name" onClick={() => setViewDoc(doc)}>
-                    {doc.name}
+        {loading ? (
+          <p style={{ color: '#64748b' }}>Loading documents...</p>
+        ) : (
+          <section className="doc-list">
+            {documents.length === 0 ? (
+              <p style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>
+                No documents uploaded yet.
+              </p>
+            ) : (
+              documents.map(doc => (
+                <div className="doc-item" key={doc.DocID}>
+                  <div className="doc-info">
+                    <div className="doc-icon">📄</div>
+                    <div>
+                      <div className="doc-type">{doc.DocType}</div>
+                      <div className="doc-name" onClick={() => setPreviewDoc(doc)}>
+                        {doc.FileName}
+                      </div>
+                      <div className="doc-date">
+                        Uploaded: {new Date(doc.UploadedOn).toLocaleDateString()}
+                      </div>
+                    </div>
                   </div>
-                  <div className="doc-date">Uploaded: {doc.date}</div>
+                  <div className="doc-right">
+                    <button className="btn-preview" onClick={() => setPreviewDoc(doc)}>
+                      👁 Preview
+                    </button>
+                    <button
+                      className="btn-preview"
+                      onClick={() => handleDownload(doc.FilePath, doc.FileName)}
+                    >
+                      ⬇ Download
+                    </button>
+                    <div
+                      className="status-badge"
+                      style={{
+                        backgroundColor: `${getStatusColor(doc.Status)}15`,
+                        color: getStatusColor(doc.Status)
+                      }}
+                    >
+                      <span style={{
+                        width: '8px', height: '8px', borderRadius: '50%',
+                        backgroundColor: getStatusColor(doc.Status),
+                        display: 'inline-block'
+                      }}></span>
+                      {doc.Status}
+                    </div>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="status-badge" style={{ backgroundColor: `${getStatusColor(doc.status)}15`, color: getStatusColor(doc.status) }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: getStatusColor(doc.status) }}></span>
-                {doc.status}
-              </div>
-            </div>
-          ))}
-          {documents.length === 0 && <p style={{ padding: '30px', textAlign: 'center', color: '#64748b' }}>No documents uploaded yet.</p>}
-        </section>
+              ))
+            )}
+          </section>
+        )}
       </main>
 
       {isUploadOpen && (
@@ -119,12 +178,11 @@ const MyDocuments = () => {
               <h3 style={{ fontSize: '20px', color: '#0f172a' }}>Upload New Document</h3>
               <button className="close-btn" onClick={() => setIsUploadOpen(false)}>✕</button>
             </div>
-            
-            <form onSubmit={handleUploadSubmit}>
-              <select 
-                className="form-control" 
+            <form onSubmit={handleUpload}>
+              <select
+                className="form-control"
                 value={uploadForm.type}
-                onChange={e => setUploadForm({...uploadForm, type: e.target.value})}
+                onChange={e => setUploadForm({ ...uploadForm, type: e.target.value })}
                 required
               >
                 <option value="">Select Document Type...</option>
@@ -133,41 +191,61 @@ const MyDocuments = () => {
                 <option value="Income Certificate">Income Certificate</option>
                 <option value="Caste Certificate">Caste/Social Category Certificate</option>
               </select>
-
               <div className="file-box">
-                <div style={{ fontSize: '32px', margin: '0 0 10px 0' }}>📁</div>
+                <div style={{ fontSize: '32px', marginBottom: '10px' }}>📁</div>
                 <div style={{ fontWeight: '600', color: '#0f172a', marginBottom: '4px' }}>
-                  {uploadForm.file ? uploadForm.file.name : "Click to browse or drag file here"}
+                  {uploadForm.file ? uploadForm.file.name : 'Click to browse or drag file here'}
                 </div>
                 <div style={{ fontSize: '13px', color: '#64748b' }}>PDF, JPG, PNG (Max 5MB)</div>
-                <input 
-                  type="file" 
-                  onChange={e => setUploadForm({...uploadForm, file: e.target.files[0]})}
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={e => setUploadForm({ ...uploadForm, file: e.target.files[0] })}
                   required
                 />
               </div>
-
-              <button type="submit" className="btn-primary" style={{ width: '100%' }}>Secure Upload</button>
+              <button type="submit" className="btn-primary" style={{ width: '100%' }} disabled={uploading}>
+                {uploading ? 'Uploading...' : 'Secure Upload'}
+              </button>
             </form>
           </div>
         </div>
       )}
 
-      {viewDoc && (
-        <div className="modal-overlay" onClick={() => setViewDoc(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '700px' }}>
+      {previewDoc && (
+        <div className="modal-overlay" onClick={() => setPreviewDoc(null)}>
+          <div className="modal-content preview-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 style={{ fontSize: '20px', color: '#0f172a' }}>Document Preview: {viewDoc.type}</h3>
-              <button className="close-btn" onClick={() => setViewDoc(null)}>✕</button>
+              <h3 style={{ fontSize: '20px', color: '#0f172a' }}>
+                {previewDoc.DocType} — {previewDoc.FileName}
+              </h3>
+              <button className="close-btn" onClick={() => setPreviewDoc(null)}>✕</button>
             </div>
-            
-            <div style={{ background: '#f8fafc', borderRadius: '16px', height: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0', flexDirection: 'column' }}>
-              <div style={{ fontSize: '64px', marginBottom: '20px' }}>📄</div>
-              <p style={{ color: '#64748b', fontWeight: '500' }}>{viewDoc.name}</p>
-              <p style={{ color: '#94a3b8', fontSize: '13px', marginTop: '10px' }}>
-                (Document preview placeholder. Actual file rendering will happen when backend is connected.)
-              </p>
-            </div>
+            {isImage(previewDoc.FileName) ? (
+              <img
+                src={getPreviewUrl(previewDoc.FilePath)}
+                alt={previewDoc.DocType}
+                style={{ width: '100%', borderRadius: '12px', objectFit: 'contain' }}
+              />
+            ) : isPDF(previewDoc.FileName) ? (
+              <iframe
+                src={getPreviewUrl(previewDoc.FilePath)}
+                style={{ width: '100%', height: '500px', borderRadius: '12px', border: 'none' }}
+                title={previewDoc.DocType}
+              />
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px' }}>📄</div>
+                <p>Preview not available for this file type.</p>
+                <button
+                  className="btn-primary"
+                  style={{ marginTop: '16px' }}
+                  onClick={() => handleDownload(previewDoc.FilePath, previewDoc.FileName)}
+                >
+                  Download File
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

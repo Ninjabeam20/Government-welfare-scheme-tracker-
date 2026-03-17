@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import VerificationQueue from './VerificationQueue';
 import OfficerSidebar from './OfficerSidebar';
+import { useNavigate } from 'react-router-dom';
 
 const OfficerDashboard = () => {
   // State to manage which view is active in the main content area
@@ -9,7 +10,11 @@ const OfficerDashboard = () => {
   const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const navigate = useNavigate();
+const handleLogout = async () => {
+  await axios.get('http://localhost:5000/auth/logout', { withCredentials: true });
+  navigate('/login');
+};
   useEffect(() => {
     // Fetch dashboard stats (pending verifications)
     const fetchStats = async () => {
@@ -72,7 +77,14 @@ const OfficerDashboard = () => {
           <h2>
             {activeView === 'dashboard' ? 'Verification Operations' : 'Verification Queue'}
           </h2>
-          <div className="profile-badge">👮‍♂️ Welfare Officer</div>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+  <div className="profile-badge">👮‍♂️ Welfare Officer</div>
+  <button onClick={handleLogout} style={{
+    background: '#fee2e2', color: '#dc2626', border: 'none',
+    padding: '12px 24px', borderRadius: '99px',
+    fontWeight: '700', cursor: 'pointer', fontSize: '14px'
+  }}>Sign Out</button>
+</div>
         </header>
 
         {activeView === 'dashboard' && (

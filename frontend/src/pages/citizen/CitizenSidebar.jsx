@@ -23,7 +23,7 @@ const CitizenSidebar = () => {
       <aside className="sidebar">
         <div className="logo">WelfarePortal.</div>
         <nav>
-          <div className={`nav-link ${isActive('/') ? 'active' : ''}`} onClick={() => navigate('/')}>
+          <div className={`nav-link ${isActive('/citizen/dashboard') ? 'active' : ''}`} onClick={() => navigate('/citizen/dashboard')}>
             <span>🏠</span> Dashboard
           </div>
           <div className={`nav-link ${isActive('/citizen/schemes') ? 'active' : ''}`} onClick={() => navigate('/citizen/schemes')}>
