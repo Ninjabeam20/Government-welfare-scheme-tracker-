@@ -2,50 +2,66 @@ const express = require('express');
 const router = express.Router();
 
 module.exports = (pool) => {
-    // 1. GET all schemes for Admin table
+    // 1. GET Dashboard Stats (Aggregated)
+    router.get('/stats', async (req, res) => {
+        try {
+            const [schemes] = await pool.query('SELECT COUNT(*) as count FROM schemes');
+            const [officers] = await pool.query('SELECT COUNT(*) as count FROM officers');
+            const [pending] = await pool.query('SELECT COUNT(*) as count FROM applications WHERE status = "Under Review" OR status = "Pending eKYC"');
+            
+            res.json({
+                totalSchemes: schemes[0].count,
+                totalOfficers: officers[0].count,
+                pendingApps: pending[0].count
+            });
+        } catch (error) {
+            res.status(500).json({ message: "Error fetching stats" });
+        }
+    });
+
+    // 2. GET all schemes
     router.get('/schemes', async (req, res) => {
         try {
             const [rows] = await pool.query('SELECT * FROM schemes ORDER BY id DESC');
             res.json(rows);
         } catch (error) {
-            res.status(500).json({ message: "Error fetching schemes" });
+            res.status(500).json({ message: "Error" });
         }
     });
 
-    // 2. POST: Create a new scheme
-    router.post('/schemes', async (req, res) => {
-        const { scheme_name, description, max_income } = req.body;
+    // 3. PATCH toggle scheme status
+    router.patch('/schemes/:id/toggle', async (req, res) => {
+        const { id } = req.params;
         try {
-            const query = `INSERT INTO schemes (scheme_name, description, max_income) VALUES (?, ?, ?)`;
-            await pool.query(query, [scheme_name, description, max_income]);
-            res.status(201).json({ success: true, message: "Scheme created successfully!" });
+            await pool.query('UPDATE schemes SET is_active = NOT is_active WHERE id = ?', [id]);
+            res.json({ success: true });
         } catch (error) {
-            res.status(500).json({ message: "Error creating scheme" });
+            res.status(500).json({ message: "Error" });
         }
     });
 
-    // 3. GET all officers (Linked to teammate's 'officers' table logic)
+    // 4. GET all officers
     router.get('/officers', async (req, res) => {
         try {
-            const [rows] = await pool.query('SELECT * FROM officers');
+            const [rows] = await pool.query('SELECT * FROM officers ORDER BY name ASC');
             res.json(rows);
         } catch (error) {
-            res.status(500).json({ message: "Error fetching officers" });
+            res.status(500).json({ message: "Error" });
         }
     });
 
-    // 4. GET Audit Logs (Chronological - Latest First)
+    // 5. GET all audits
     router.get('/audits', async (req, res) => {
         try {
             const query = `
-                SELECT LogID as id, ActorType as actor, ActionDetails as action, 
-                DATE_FORMAT(ActionTime, '%Y-%m-%d') as date, 
-                DATE_FORMAT(ActionTime, '%h:%i %p') as time 
-                FROM auditlogs ORDER BY ActionTime DESC`;
+                SELECT id, actor, action, 
+                DATE_FORMAT(action_time, '%Y-%m-%d') as date, 
+                DATE_FORMAT(action_time, '%h:%i %p') as time 
+                FROM auditlogs ORDER BY action_time DESC`;
             const [rows] = await pool.query(query);
             res.json(rows);
         } catch (error) {
-            res.status(500).json({ message: "Error fetching audit logs" });
+            res.status(500).json({ message: "Error" });
         }
     });
 
