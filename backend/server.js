@@ -25,11 +25,14 @@ const pool = mysql.createPool({
 // ==========================================
 const officerRoutes = require('./routes/officerRoutes')(pool);
 const citizenRoutes = require('./routes/citizenRoutes')(pool); // New
-const adminRoutes = require('./routes/adminRoutes')(pool);     // New
+const adminRoutes = require('./routes/adminRoutes')(pool); // Ensure pool is passed
+
+
 
 // Mount the routes
 app.use('/api/officer', officerRoutes);
 app.use('/api/citizen', citizenRoutes);
+// Make sure the path here is exactly '/api/admin'
 app.use('/api/admin', adminRoutes);
 
 // Health Check

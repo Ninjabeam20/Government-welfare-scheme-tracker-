@@ -1,40 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios'; // Add this!
+
 
 const ManageSchemes = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  // Mock data matching your welfareschemes DB table
-  const [schemes, setSchemes] = useState([
-    { id: 1, name: 'Senior Citizen Pension Scheme', category: 'Healthcare', applications: 1240, active: true, minIncome: 0, maxIncome: 50000 },
-    { id: 2, name: 'Student Scholarship Program', category: 'Education', applications: 342, active: true, minIncome: 0, maxIncome: 120000 },
-    { id: 3, name: 'Kisan Housing Grant', category: 'Housing', applications: 89, active: false, minIncome: 0, maxIncome: 80000 },
-  ]);
-
+  const [schemes, setSchemes] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const[newScheme, setNewScheme] = useState({ name: '', category: '', maxIncome: '', description: '' });
+  const [newScheme, setNewScheme] = useState({ name: '', category: '', maxIncome: '', description: '' });
 
-  const handleCreateScheme = (e) => {
+  // Fetch real schemes from MySQL on load
+  useEffect(() => {
+    fetchSchemes();
+  },[]);
+
+  const fetchSchemes = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/api/admin/schemes');
+      console.log("Backend Data Received:", response.data); // This helps us debug!
+
+      // Check if response.data is actually an array before mapping
+      if (Array.isArray(response.data)) {
+       // Inside fetchSchemes in ManageSchemes.jsx
+    const formattedSchemes = response.data.map(dbScheme => ({
+      id: dbScheme.SchemeID, // Directly use SchemeID
+      name: dbScheme.SchemeName, // Directly use SchemeName
+      category: dbScheme.SchemeCategory || 'General', // If category is not in DB, use default
+      applications: 0, // Placeholder
+      active: dbScheme.isactive === 1 || dbScheme.isactive === true, // Check if 'isactive' exists, otherwise default
+      maxIncome: dbScheme.max_income || dbScheme.MaxIncome || 0 // Fallback for maxIncome
+    }));
+    setSchemes(formattedSchemes);
+      } else {
+        console.error("Backend did not return an array:", response.data);
+        setSchemes([]); // Set to empty array so it doesn't crash
+      }
+    } catch (error) {
+      console.error("API Error:", error);
+      setSchemes([]);
+    }
+  };
+
+  // Send new scheme to Node.js Backend
+  const handleCreateScheme = async (e) => {
     e.preventDefault();
-    const addedScheme = {
-      id: schemes.length + 1,
-      name: newScheme.name,
-      category: newScheme.category,
-      applications: 0,
-      active: true,
-      minIncome: 0,
-      maxIncome: Number(newScheme.maxIncome)
-    };
-    setSchemes([addedScheme, ...schemes]);
-    setIsModalOpen(false);
-    setNewScheme({ name: '', category: '', maxIncome: '', description: '' });
+    try {
+      await axios.post('http://localhost:5000/api/admin/schemes', {
+        scheme_name: newScheme.name,
+        description: newScheme.description,
+        // max_income: Number(newScheme.maxIncome) // Only include if max_income column exists in DB
+    });
+      alert("Scheme Published Successfully!");
+      setIsModalOpen(false);
+      setNewScheme({ name: '', category: '', maxIncome: '', description: '' });
+      fetchSchemes(); // Refresh the table instantly!
+    } catch (error) {
+      console.error("Error saving scheme:", error);
+      alert("Failed to create scheme. Check console.");
+    }
   };
-
-  const toggleStatus = (id) => {
-    setSchemes(schemes.map(s => s.id === id ? { ...s, active: !s.active } : s));
+  const toggleStatus = async (id, currentStatus) => {
+    try {
+      // Toggle logic: If current is 1 (active), send 0 (inactive), and vice versa
+      const newStatus = currentStatus ? 0 : 1; 
+      await axios.patch(`http://localhost:5000/api/admin/schemes/${id}/toggle`, { isactive: newStatus });
+      fetchSchemes(); // Refresh list from DB
+    } catch (error) {
+      console.error("Error toggling status:", error);
+      alert("Failed to update status.");
+    }
   };
-
   return (
     <div className="admin-container">
       {/* FLUENT UI STYLES - Indigo Theme for Admin */}
@@ -122,9 +156,9 @@ const ManageSchemes = () => {
                     </span>
                   </td>
                   <td>
-                    <button className="toggle-btn" onClick={() => toggleStatus(scheme.id)}>
-                      {scheme.active ? 'Deactivate' : 'Activate'}
-                    </button>
+                    <button className="toggle-btn" onClick={() => toggleStatus(scheme.id, scheme.active)}>
+  {scheme.active ? 'Deactivate' : 'Activate'}
+</button>
                   </td>
                 </tr>
               ))}

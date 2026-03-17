@@ -1,16 +1,21 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 const BrowseSchemes = () => {
   const navigate = useNavigate();
 
-  // Mock data based strictly on your DBMS Lab welfareschemes table schema
-  const mockSchemes =[
-    { id: 1, name: "Senior Citizen Pension Scheme", category: "Healthcare", maxIncome: 50000, desc: "Monthly financial support for senior citizens without regular income." },
-    { id: 2, name: "Student Scholarship Program", category: "Education", maxIncome: 120000, desc: "Full tuition coverage for higher education for low-income families." },
-    { id: 3, name: "Kisan Housing Grant", category: "Housing", maxIncome: 80000, desc: "Subsidy for building concrete houses for agricultural workers." },
-    { id: 4, name: "Women Entrepreneurship Fund", category: "Women", maxIncome: 200000, desc: "Seed funding for women starting small-scale businesses." },
-  ];
+  // --- REPLACE YOUR OLD MOCK DATA BLOCK WITH THIS LIVE DATA BLOCK ---
+  const [liveSchemes, setLiveSchemes] = useState([]);
+
+  useEffect(() => {
+    // Fetch only active schemes from MySQL via Node.js
+    axios.get('http://localhost:5000/api/citizen/schemes')
+      .then(res => {
+        setLiveSchemes(res.data);
+      })
+      .catch(err => console.error("Error fetching citizen schemes:", err));
+  }, []); // Empty dependency array means this runs ONCE when the component loads
 
   return (
     <div className="dashboard-container">
@@ -53,8 +58,7 @@ const BrowseSchemes = () => {
           <div className="nav-link active" onClick={() => navigate('/citizen/schemes')}><span>📄</span> Apply for Schemes</div>
           <div className="nav-link" onClick={() => navigate('/citizen/track')}><span>📊</span> Track Status</div>
           <div className="nav-link" onClick={() => navigate('/citizen/documents')}><span>📁</span> My Documents</div>
-          <div className="nav-link"><span>🎧</span> Grievance Support</div>
-        </nav>
+<div className="nav-link" onClick={() => navigate('/citizen/grievance')}><span>🎧</span> Grievance Support</div>        </nav>
       </aside>
 
       {/* Main Content Area */}
@@ -65,24 +69,25 @@ const BrowseSchemes = () => {
         </header>
 
         <section className="scheme-grid">
-          {mockSchemes.map((scheme) => (
-            <div className="scheme-card" key={scheme.id}>
-              <div>
-                <span className="badge">{scheme.category}</span>
-                <h3 className="scheme-title">{scheme.name}</h3>
-                <p className="scheme-desc">{scheme.desc}</p>
-                <div className="scheme-meta">
-                  <span>💰</span> Max Family Income: ₹{scheme.maxIncome.toLocaleString()}
-                </div>
-              </div>
-              <button 
-                className="apply-btn" 
-                onClick={() => navigate(`/citizen/apply/${scheme.id}`)}
-              >
-                Check Eligibility & Apply
-              </button>
-            </div>
-          ))}
+          // In BrowseSchemes.jsx, find the map function:
+{liveSchemes.map((scheme) => (
+  <div className="scheme-card" key={scheme.SchemeID}> {/* Use SchemeID */}
+    <div>
+      <span className="badge">General</span> {/* Hardcoded for now */}
+      <h3 className="scheme-title">{scheme.SchemeName}</h3> {/* Use SchemeName */}
+      <p className="scheme-desc">{scheme.Description}</p> {/* Use Description */}
+      <div className="scheme-meta">
+        <span>💰</span> Max Family Income: ₹0
+      </div>
+    </div>
+    <button 
+      className="apply-btn" 
+      onClick={() => navigate(`/citizen/apply/${scheme.SchemeID}`)}
+    >
+      Check Eligibility & Apply
+    </button>
+  </div>
+))}
         </section>
       </main>
     </div>

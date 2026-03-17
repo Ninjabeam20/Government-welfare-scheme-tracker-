@@ -39,8 +39,7 @@ const CitizenDashboard = () => {
           <div className="nav-link" onClick={() => navigate('/citizen/schemes')}><span>📄</span> Apply for Schemes</div>
           <div className="nav-link" onClick={() => navigate('/citizen/track')}><span>📊</span> Track Status</div>
           <div className="nav-link" onClick={() => navigate('/citizen/documents')}><span>📁</span> My Documents</div>
-          <div className="nav-link"><span>🎧</span> Grievance Support</div>
-        </nav>
+<div className="nav-link" onClick={() => navigate('/citizen/grievance')}><span>🎧</span> Grievance Support</div>        </nav>
       </aside>
 
       <main className="main">

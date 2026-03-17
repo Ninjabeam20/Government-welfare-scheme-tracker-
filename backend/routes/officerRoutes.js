@@ -17,9 +17,9 @@ module.exports = (pool) => {
                     DATE_FORMAT(a.applied_on, '%d %b %Y') AS date, 
                     a.status, 
                     c.income 
-                FROM applications a
-                JOIN citizens c ON a.citizen_id = c.id
-                JOIN schemes s ON a.scheme_id = s.id
+                FROM currentapplications a
+                JOIN individualbeneficiaries c ON a.citizen_id = c.id
+                JOIN welfareschemes s ON a.scheme_id = s.id
                 WHERE a.status NOT IN ('Approved', 'Rejected', 'Routed to DBT')
                 ORDER BY a.applied_on DESC;
             `;

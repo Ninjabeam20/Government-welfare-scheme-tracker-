@@ -5,7 +5,7 @@ module.exports = (pool) => {
     // Fetch all active schemes for the Citizen "Browse Schemes" page
     router.get('/schemes', async (req, res) => {
         try {
-            const [rows] = await pool.query('SELECT * FROM schemes WHERE is_active = TRUE');
+            const [rows] = await pool.query('SELECT * FROM welfareschemes WHERE is_active = TRUE');
             res.json(rows);
         } catch (error) {
             res.status(500).json({ message: "Error fetching schemes" });
@@ -16,7 +16,7 @@ module.exports = (pool) => {
     router.post('/apply', async (req, res) => {
         const { citizen_id, scheme_id } = req.body;
         try {
-            const query = `INSERT INTO applications (citizen_id, scheme_id, status) VALUES (?, ?, 'Pending eKYC')`;
+            const query = `INSERT INTO currentapplications (citizen_id, scheme_id, status) VALUES (?, ?, 'Pending eKYC')`;
             await pool.query(query, [citizen_id, scheme_id]);
             res.json({ success: true, message: "Application submitted!" });
         } catch (error) {
