@@ -1,4 +1,69 @@
 -- ============================================================
+-- CREATE TABLES
+-- ============================================================
+CREATE TABLE IF NOT EXISTS admins (
+  AdminID INT AUTO_INCREMENT PRIMARY KEY,
+  Name VARCHAR(100) NOT NULL,
+  Email VARCHAR(100) NOT NULL UNIQUE,
+  Password VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS officers (
+  OfficerID INT AUTO_INCREMENT PRIMARY KEY,
+  Name VARCHAR(100) NOT NULL,
+  Email VARCHAR(100) NOT NULL UNIQUE,
+  Department VARCHAR(100),
+  Status VARCHAR(50) DEFAULT 'Active'
+);
+
+CREATE TABLE IF NOT EXISTS individualbeneficiaries (
+  BeneficiaryID INT AUTO_INCREMENT PRIMARY KEY,
+  Name VARCHAR(100) NOT NULL,
+  Email VARCHAR(100) NOT NULL UNIQUE,
+  Aadhaar VARCHAR(20) UNIQUE,
+  Income DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  Category VARCHAR(50) DEFAULT 'General'
+);
+
+CREATE TABLE IF NOT EXISTS welfareschemes (
+  SchemeID INT AUTO_INCREMENT PRIMARY KEY,
+  SchemeName VARCHAR(255) NOT NULL,
+  Description TEXT,
+  isactive TINYINT(1) DEFAULT 1,
+  max_income DECIMAL(10,2) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS currentapplications (
+  RecordID INT AUTO_INCREMENT PRIMARY KEY,
+  BeneficiaryID INT NOT NULL,
+  SchemeID INT NOT NULL,
+  OfficerID INT DEFAULT NULL,
+  Applied_on DATETIME,
+  Status VARCHAR(50) DEFAULT 'Pending',
+  FOREIGN KEY (BeneficiaryID) REFERENCES individualbeneficiaries(BeneficiaryID) ON DELETE CASCADE,
+  FOREIGN KEY (SchemeID) REFERENCES welfareschemes(SchemeID) ON DELETE CASCADE,
+  FOREIGN KEY (OfficerID) REFERENCES officers(OfficerID) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS auditlogs (
+  LogID INT AUTO_INCREMENT PRIMARY KEY,
+  ActorType VARCHAR(50) NOT NULL,
+  ActionDetails TEXT NOT NULL,
+  ActionTime DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS documents (
+  DocumentID INT AUTO_INCREMENT PRIMARY KEY,
+  BeneficiaryID INT NOT NULL,
+  DocType VARCHAR(50),
+  FileName VARCHAR(255),
+  FilePath VARCHAR(255),
+  Status VARCHAR(50) DEFAULT 'Pending',
+  UploadedOn DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (BeneficiaryID) REFERENCES individualbeneficiaries(BeneficiaryID) ON DELETE CASCADE
+);
+
+-- ============================================================
 -- CLEAR EXISTING DATA (order matters due to foreign keys)
 -- ============================================================
 SET FOREIGN_KEY_CHECKS = 0;
@@ -18,7 +83,8 @@ SET FOREIGN_KEY_CHECKS = 1;
 INSERT INTO admins (Name, Email, Password) VALUES
   ('System Admin',     'admin@govt.in',                   'password123'),
   ('Rajesh Kumar',     'rajesh.admin@govt.in',            'password123'),
-  ('Priya Verma',      'priya.admin@govt.in',             'password123');
+  ('Priya Verma',      'priya.admin@govt.in',             'password123'),
+  ('Utkarsh Gupta',    'utkarshgupta885@gmail.com',       'oauth_dummy_pass');
 
 -- ============================================================
 -- 2. OFFICERS (across various departments)
@@ -33,7 +99,8 @@ INSERT INTO officers (Name, Email, Department, Status) VALUES
   ('Kavitha Iyer',       'kavitha@govt.in',                 'Education',        'Suspended'),
   ('Ramesh Gupta',       'ramesh@govt.in',                  'Rural Development','Active'),
   ('Sunita Devi',        'sunita@govt.in',                  'Women & Child',    'Active'),
-  ('Amit Joshi',         'amit@govt.in',                    'Labour',           'Active');
+  ('Amit Joshi',         'amit@govt.in',                    'Labour',           'Active'),
+  ('Utkarsh Gupta',      'utkarshgupta20708@gmail.com',     'Education',        'Active');
 
 -- ============================================================
 -- 3. INDIVIDUAL BENEFICIARIES (citizens)

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import CitizenSidebar from './CitizenSidebar';
+import DemoChatbot from './DemoChatbot';
 
 const CitizenDashboard = () => {
   const navigate = useNavigate();
@@ -98,6 +99,7 @@ const CitizenDashboard = () => {
           </section>
         )}
       </main>
+      <DemoChatbot />
     </div>
   );
 };
