@@ -1,17 +1,26 @@
-# Root level
+# Dependencies
 node_modules/
-.DS_Store
-*.log
-
-# Backend
-backend/node_modules/
-backend/.env
-
-# Frontend
 frontend/node_modules/
-frontend/dist/
+backend/node_modules/
+
+# Environment files
+.env
+backend/.env
 frontend/.env
 
-# Misc
-npm-debug.log*
+# Local uploads
+backend/uploads/
+
+# Build outputs
+frontend/dist/
 outputs/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Project specific
+issues.txt
+
+# System files
+.DS_Store
